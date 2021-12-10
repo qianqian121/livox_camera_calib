@@ -3,8 +3,8 @@
     pkg="livox_camera_calib"
     type="lidar_camera_calib"
     name="lidar_camera_calib"
-    args="$(find livox_camera_calib)/config/camera.yaml $(find livox_camera_calib)/config/config_indoor.yaml 
-   /mnt/Downloads/indoor1.bag $(find livox_camera_calib)/result"
+    args="$(find livox_camera_calib)/config/camera_0231.yaml $(find livox_camera_calib)/config/config_indoor_robosense-m1_ar0231.yaml
+   /mnt/data/ros/livox_camera_calib/robosense-m1_ar0231/2021-12-03-01-22-33.bag $(find livox_camera_calib)/result"
     output="screen"
   />
   <node 
