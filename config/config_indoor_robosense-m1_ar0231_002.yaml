@@ -1,0 +1,58 @@
+%YAML:1.0
+
+# Topic name in rosbag
+PointCloudTopic: "/rslidar_points"
+ImageTopic: "/usb_cam/image_raw"
+
+# Lidar Data type(custom msg or pointcloud2)
+Data.custom_msg: 0
+# Initial extrinsic (usually provided by hand measurement or cad design)
+
+ExtrinsicMat: !!opencv-matrix
+  rows: 4
+  cols: 4
+  dt: d
+#  data: [0.0,   -1.0,   0.0,    0.0,
+#         0.0,  0.0,  -1.0,    0.0,
+#         1.0,   0.0,    0.0,    0.0,
+#         0.0,   0.0,    0.0,    1.0]
+#  data: [ 9.4084090716008414e-02, -9.9530571623471509e-01,
+#          -2.2687333572781358e-02, 4.0000000000000013e-01,
+#          -7.8507320490037669e-02, 1.5300179603618553e-02,
+#          -9.9679612014371910e-01, 1.0599999999999994e+00,
+#          9.9246399657802020e-01, 9.5563778360829618e-02,
+#          -7.6699281364207200e-02, 6.9999999999999996e-01, 0., 0., 0., 1. ]
+#  data: [ 1.1839945984619259e-01, -9.9292769902260536e-01,
+#          -8.7265354983739069e-03, 4.1000000000000014e-01,
+#          -4.2613429873642271e-02, 3.6993043705094725e-03,
+#          -9.9908478656297162e-01, 1.0100000000000000e+00,
+#          9.9205124036137071e-01, 1.1866296667810426e-01,
+#          -4.1874059232621788e-02, 7.2999999999999998e-01, 0., 0., 0., 1. ]
+  data: [ 1.9068084686815753e-01, -9.8096791652422111e-01,
+          -3.6643708706556283e-02, 1.0000000000000037e-02,
+          -4.1245984590422106e-02, 2.9289410431053192e-02,
+          -9.9871962992211583e-01, 7.1000000000000008e-01,
+          9.8078518718056151e-01, 1.9194811066204848e-01,
+          -3.4876057983394236e-02, -6.9999999999999896e-02, 0., 0., 0., 1. ]
+# Params for Canny Edge Extraction
+
+Canny.gray_threshold: 10
+Canny.len_threshold: 200
+
+# Params for Voxel Cutting & Plane Fitting & Edge Extraction
+Voxel.size: 0.5
+Voxel.down_sample_size: 0.02
+Plane.min_points_size: 15
+Plane.normal_theta_min: 30
+Plane.normal_theta_max: 145
+Plane.max_size: 8
+Ransac.dis_threshold: 0.02
+Edge.min_dis_threshold: 0.03
+Edge.max_dis_threshold: 0.06
+AdjustEuler1: -2
+AdjustEuler2: -0.5
+AdjustEuler3: 2
+
+# Params for color point clouds
+Color.dense: 0.1
+Color.intensity_threshold: 5
