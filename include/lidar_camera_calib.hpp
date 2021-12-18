@@ -78,6 +78,7 @@ public:
                             pcl::PointCloud<pcl::PointXYZI>::Ptr &origin_cloud,
                             cv::Mat &rgb_img);
   bool loadCameraConfig(const std::string &camera_file);
+  void rtToMatrix(Eigen::Vector3d &r, Eigen::Vector3d &t, Eigen::Matrix4d& m);
   bool loadCalibConfig(const std::string &config_file);
   bool loadConfig(const std::string &configFile);
   bool checkFov(const cv::Point2d &p);
@@ -230,6 +231,24 @@ bool Calibration::loadCameraConfig(const std::string &camera_file) {
   return true;
 };
 
+void Calibration::rtToMatrix(Eigen::Vector3d &r, Eigen::Vector3d &t, Eigen::Matrix4d& m)
+{
+  Eigen::Matrix3d m_r;
+  m_r = Eigen::AngleAxisd(r[0], Eigen::Vector3d::UnitZ()) *
+      Eigen::AngleAxisd(r[1], Eigen::Vector3d::UnitY()) *
+      Eigen::AngleAxisd(r[2], Eigen::Vector3d::UnitX());
+
+  m.block(0,0,3,3) = m_r;
+  m(0,3) = t[0];
+  m(1,3) = t[1];
+  m(2,3) = t[2];
+
+  m(3, 0) = 0;
+  m(3, 1) = 0;
+  m(3, 2) = 0;
+  m(3, 3) = 1;
+}
+
 bool Calibration::loadCalibConfig(const std::string &config_file) {
   cv::FileStorage fSettings(config_file, cv::FileStorage::READ);
   if (!fSettings.isOpened()) {
@@ -237,16 +256,59 @@ bool Calibration::loadCalibConfig(const std::string &config_file) {
               << std::endl;
     exit(-1);
   }
+  string extrinsic_data_type;
   fSettings["PointCloudTopic"] >> lidar_topic_name_;
   fSettings["ImageTopic"] >> image_topic_name_;
-  fSettings["ExtrinsicMat"] >> init_extrinsic_;
-  init_rotation_matrix_ << init_extrinsic_.at<double>(0, 0),
-      init_extrinsic_.at<double>(0, 1), init_extrinsic_.at<double>(0, 2),
-      init_extrinsic_.at<double>(1, 0), init_extrinsic_.at<double>(1, 1),
-      init_extrinsic_.at<double>(1, 2), init_extrinsic_.at<double>(2, 0),
-      init_extrinsic_.at<double>(2, 1), init_extrinsic_.at<double>(2, 2);
-  init_translation_vector_ << init_extrinsic_.at<double>(0, 3),
-      init_extrinsic_.at<double>(1, 3), init_extrinsic_.at<double>(2, 3);
+  fSettings["ExtrinsicDataType"] >> extrinsic_data_type;
+  std::cout << "ExtrinsicDataType: " << extrinsic_data_type << std::endl;
+  std::cout << "ExtrinsicDataTypeSz: " << extrinsic_data_type.size() << std::endl;
+  if (extrinsic_data_type == "RotatedCameraToLidarExtrinsicTf") {
+    Eigen::Matrix3d rotated_camera_to_camera_rotation;
+    rotated_camera_to_camera_rotation <<
+        0.0,  -1.0,   0.0,
+        0.0,   0.0,  -1.0,
+        1.0,   0.0,   0.0;
+    Eigen::Matrix4d rotated_camera_to_camera_transform = Eigen::MatrixXd::Zero(4,4);
+    rotated_camera_to_camera_transform.block(0,0,3,3) = rotated_camera_to_camera_rotation;
+    rotated_camera_to_camera_transform(3,3) = 1;
+
+    cv::Mat rotated_camera_to_lidar_tf;
+    fSettings[extrinsic_data_type] >> rotated_camera_to_lidar_tf;
+    // xt yt zt yaw pitch roll
+    Eigen::Matrix3d rotated_camera_to_lidar_rotation;
+    Eigen::Vector3d rotated_camera_to_lidar_t;
+    rotated_camera_to_lidar_t << rotated_camera_to_lidar_tf.at<double>(0, 0),
+        rotated_camera_to_lidar_tf.at<double>(0, 1),
+        rotated_camera_to_lidar_tf.at<double>(0, 2);
+    Eigen::Vector3d rotated_camera_to_lidar_r;
+    rotated_camera_to_lidar_r << rotated_camera_to_lidar_tf.at<double>(0, 3),
+        rotated_camera_to_lidar_tf.at<double>(0, 4),
+        rotated_camera_to_lidar_tf.at<double>(0, 5);
+    Eigen::Matrix4d rotated_camera_to_lidar_transform;
+    rtToMatrix(rotated_camera_to_lidar_r, rotated_camera_to_lidar_t, rotated_camera_to_lidar_transform);
+
+    Eigen::Matrix4d lidar_to_camera_transform;
+    lidar_to_camera_transform = rotated_camera_to_camera_transform * rotated_camera_to_lidar_transform.inverse();
+    std::cout << "Init lidar to camera extrinsic matrix: " << std::endl
+              << lidar_to_camera_transform << std::endl;
+    init_rotation_matrix_ = lidar_to_camera_transform.block(0,0,3,3);
+    init_translation_vector_ << lidar_to_camera_transform(0,3),
+      lidar_to_camera_transform(1,3),
+      lidar_to_camera_transform(2,3);
+//  } else if (extrinsic_data_type == "LidarToCameraExtrinsicMat") {
+  } else {
+    if (extrinsic_data_type.empty()) {
+      extrinsic_data_type = "ExtrinsicMat";
+    }
+    fSettings[extrinsic_data_type] >> init_extrinsic_;
+    init_rotation_matrix_ << init_extrinsic_.at<double>(0, 0),
+        init_extrinsic_.at<double>(0, 1), init_extrinsic_.at<double>(0, 2),
+        init_extrinsic_.at<double>(1, 0), init_extrinsic_.at<double>(1, 1),
+        init_extrinsic_.at<double>(1, 2), init_extrinsic_.at<double>(2, 0),
+        init_extrinsic_.at<double>(2, 1), init_extrinsic_.at<double>(2, 2);
+    init_translation_vector_ << init_extrinsic_.at<double>(0, 3),
+        init_extrinsic_.at<double>(1, 3), init_extrinsic_.at<double>(2, 3);
+  }
   std::cout << "Init extrinsic: " << std::endl
             << init_rotation_matrix_ << std::endl;
   is_use_custom_msg_ = fSettings["Data.custom_msg"];
