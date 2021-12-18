@@ -3,6 +3,7 @@
 
 #include "CustomMsg.h"
 #include "common.h"
+#include "rslidar_point.h"
 #include <Eigen/Core>
 #include <cv_bridge/cv_bridge.h>
 #include <fstream>
@@ -139,6 +140,7 @@ public:
   cv::Mat init_extrinsic_;
 
   int is_use_custom_msg_;
+  int is_use_rslidar_point_;
   float voxel_size_;
   float down_sample_size_;
   float ransac_dis_threshold_;
@@ -312,6 +314,7 @@ bool Calibration::loadCalibConfig(const std::string &config_file) {
   std::cout << "Init extrinsic: " << std::endl
             << init_rotation_matrix_ << std::endl;
   is_use_custom_msg_ = fSettings["Data.custom_msg"];
+  is_use_rslidar_point_ = fSettings["Data.rslidar_point"];
   std::cout << "is_use_custom_msg_:" << is_use_custom_msg_ << std::endl;
   if (is_use_custom_msg_) {
     std::cout << "Point cloud type: custom msg" << std::endl;
@@ -1406,6 +1409,20 @@ void Calibration::loadImgAndPointcloud(
         p.y = livox_cloud_msg.points[i].y;
         p.z = livox_cloud_msg.points[i].z;
         p.intensity = livox_cloud_msg.points[i].reflectivity;
+        origin_cloud->points.push_back(p);
+      }
+    } else if (is_use_rslidar_point_) {
+      sensor_msgs::PointCloud2 rslidar_cloud;
+      rslidar_cloud =
+              *(m.instantiate<sensor_msgs::PointCloud2>()); // message type
+      pcl::PointCloud<RslidarPoint> cloud;
+      fromROSMsg(rslidar_cloud, cloud);
+      for (uint i = 0; i < cloud.size(); ++i) {
+        pcl::PointXYZI p;
+        p.x = cloud.points[i].x;
+        p.y = cloud.points[i].y;
+        p.z = cloud.points[i].z;
+        p.intensity = static_cast<float>(cloud.points[i].intensity);
         origin_cloud->points.push_back(p);
       }
     } else {

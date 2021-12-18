@@ -42,7 +42,7 @@ include_directories(
   ${OpenCV_INCLUDE_DIRS}
 )
 
-add_executable(lidar_camera_calib src/lidar_camera_calib.cpp include/lidar_camera_calib.hpp)
+add_executable(lidar_camera_calib src/lidar_camera_calib.cpp include/lidar_camera_calib.hpp include/rslidar_point.h)
 
 
 target_link_libraries(lidar_camera_calib 

@@ -6,8 +6,9 @@ ImageTopic: "/usb_cam/image_raw"
 
 # Lidar Data type(custom msg or pointcloud2)
 Data.custom_msg: 0
-# Initial extrinsic (usually provided by hand measurement or cad design)
+Data.rslidar_point: 1
 
+# Initial extrinsic (usually provided by hand measurement or cad design)
 # Which Data type used for calculating internal extrinsic matrix - Camera to Lidar transform
 ExtrinsicDataType: "RotatedCameraToLidarExtrinsicTf"
 
