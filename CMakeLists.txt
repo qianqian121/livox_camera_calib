@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0.2)
 project(livox_camera_calib)
 
 ## Compile as C++14, supported in ROS Kinetic and newer
-add_compile_options(-std=c++14)
+add_compile_options(-std=c++17)
 #SET(CMAKE_BUILD_TYPE "Debug")
 #SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g -ggdb")
 #SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
@@ -43,8 +43,11 @@ include_directories(
 )
 
 add_executable(lidar_camera_calib src/lidar_camera_calib.cpp include/lidar_camera_calib.hpp include/rslidar_point.h)
+add_executable(lidar_camera_calib_online src/lidar_camera_calib_online.cpp include/lidar_camera_calib.hpp include/rslidar_point.h)
 
-
-target_link_libraries(lidar_camera_calib 
-  ${catkin_LIBRARIES} ${OpenCV_LIBS} ${PCL_LIBRARIES} ${CERES_LIBRARIES}
+target_link_libraries(lidar_camera_calib
+        ${catkin_LIBRARIES} ${OpenCV_LIBS} ${PCL_LIBRARIES} ${CERES_LIBRARIES}
+)
+target_link_libraries(lidar_camera_calib_online
+        ${catkin_LIBRARIES} ${OpenCV_LIBS} ${PCL_LIBRARIES} ${CERES_LIBRARIES}
 )

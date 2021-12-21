@@ -62,8 +62,8 @@ public:
   int depth_canny_threshold_ = 20;
   int rgb_canny_threshold_ = 20;
   int intensity_canny_threshold_ = 20;
-  int min_depth_ = 2.5;
-  int max_depth_ = 50;
+  float min_depth_ = 2.5;
+  float max_depth_ = 10.0;
   float min_cost_ = 1000;
   int plane_max_size_ = 8;
   float detect_line_threshold_ = 0.02;
@@ -75,6 +75,7 @@ public:
   Eigen::Vector3d adjust_euler_angle_;
   Calibration(const std::string &camera_file, const std::string &calib_file,
               const std::string &bag_path);
+  Calibration(const std::string &camera_file, const std::string &calib_file);
   void loadImgAndPointcloud(const std::string bag_path,
                             pcl::PointCloud<pcl::PointXYZI>::Ptr &origin_cloud,
                             cv::Mat &rgb_img);
@@ -92,7 +93,7 @@ public:
                     pcl::PointCloud<pcl::PointXYZ>::Ptr &edge_cloud);
   void projection(const Vector6d &extrinsic_params,
                   const pcl::PointCloud<pcl::PointXYZI>::Ptr &lidar_cloud,
-                  const ProjectionType projection_type, const bool is_fill_img,
+                  const ProjectionType projection_type, const int n_fill_img,
                   cv::Mat &projection_img);
   void calcLine(const std::vector<Plane> &plane_list, const double voxel_size,
                 const Eigen::Vector3d origin,
@@ -116,6 +117,9 @@ public:
                 const pcl::PointCloud<pcl::PointXYZ>::Ptr &rgb_edge_cloud,
                 const pcl::PointCloud<pcl::PointXYZ>::Ptr &depth_edge_cloud);
   cv::Mat getProjectionImg(const Vector6d &extrinsic_params);
+  cv::Mat getProjectionImg(const Vector6d &extrinsic_params,
+      const pcl::PointCloud<pcl::PointXYZI>::Ptr &lidar_cloud,
+      const cv::Mat& rgb_image);
   void initVoxel(const pcl::PointCloud<pcl::PointXYZI>::Ptr &input_cloud,
                  const float voxel_size,
                  std::unordered_map<VOXEL_LOC, Voxel *> &voxel_map);
@@ -132,6 +136,10 @@ public:
                      const VPnPData &vpnp_point, const float pixel_inc,
                      const float range_inc, const float degree_inc,
                      Eigen::Matrix2f &covarance);
+  const Vector6d& calib_params() const {
+    return calib_params_;
+  }
+
   // 相机内参
   float fx_, fy_, cx_, cy_, k1_, k2_, p1_, p2_, k3_, s_;
   int width_, height_;
@@ -161,6 +169,8 @@ public:
   Eigen::Matrix3d init_rotation_matrix_;
   // 初始平移向量
   Eigen::Vector3d init_translation_vector_;
+
+  Vector6d calib_params_;
 
   // 存储从pcd/bag处获取的原始点云
   pcl::PointCloud<pcl::PointXYZI>::Ptr raw_lidar_cloud_;
@@ -207,6 +217,12 @@ Calibration::Calibration(const std::string &camera_file,
   edgeDetector(rgb_canny_threshold_, rgb_edge_minLen_, cut_grey_image_,
                rgb_edge_img, rgb_egde_cloud_);
 };
+
+Calibration::Calibration(const std::string &camera_file,
+                         const std::string &calib_file) {
+  loadCameraConfig(camera_file);
+  loadCalibConfig(calib_file);
+}
 
 bool Calibration::loadCameraConfig(const std::string &camera_file) {
   cv::FileStorage cameraSettings(camera_file, cv::FileStorage::READ);
@@ -313,6 +329,11 @@ bool Calibration::loadCalibConfig(const std::string &config_file) {
   }
   std::cout << "Init extrinsic: " << std::endl
             << init_rotation_matrix_ << std::endl;
+  Eigen::Vector3d init_euler_angle =
+      init_rotation_matrix_.eulerAngles(2, 1, 0);
+  Eigen::Vector3d& init_transation = init_translation_vector_;
+  calib_params_ << init_euler_angle(0), init_euler_angle(1), init_euler_angle(2),
+      init_transation(0), init_transation(1), init_transation(2);
   is_use_custom_msg_ = fSettings["Data.custom_msg"];
   is_use_rslidar_point_ = fSettings["Data.rslidar_point"];
   std::cout << "is_use_custom_msg_:" << is_use_custom_msg_ << std::endl;
@@ -462,7 +483,7 @@ void Calibration::edgeDetector(
 void Calibration::projection(
     const Vector6d &extrinsic_params,
     const pcl::PointCloud<pcl::PointXYZI>::Ptr &lidar_cloud,
-    const ProjectionType projection_type, const bool is_fill_img,
+    const ProjectionType projection_type, const int n_fill_img,
     cv::Mat &projection_img) {
   std::vector<cv::Point3f> pts_3d;
   std::vector<float> intensity_list;
@@ -540,13 +561,13 @@ void Calibration::projection(
   cv::cvtColor(rgb_image_project, grey_image_projection, cv::COLOR_BGR2GRAY);
 
   image_project.convertTo(image_project, CV_8UC1, 1 / 256.0);
-  if (is_fill_img) {
-    for (int i = 0; i < 5; i++) {
+  if (n_fill_img) {
+    for (int i = 0; i < n_fill_img; i++) {
       image_project = fillImg(image_project, UP, LEFT);
     }
   }
-  if (is_fill_img) {
-    for (int i = 0; i < 5; i++) {
+  if (n_fill_img) {
+    for (int i = 0; i < n_fill_img; i++) {
       grey_image_projection = fillImg(grey_image_projection, UP, LEFT);
     }
   }
@@ -1489,7 +1510,7 @@ void Calibration::calcDirection(const std::vector<Eigen::Vector2d> &points,
 
 cv::Mat Calibration::getProjectionImg(const Vector6d &extrinsic_params) {
   cv::Mat depth_projection_img;
-  projection(extrinsic_params, raw_lidar_cloud_, INTENSITY, false,
+  projection(extrinsic_params, raw_lidar_cloud_, INTENSITY, 0,
              depth_projection_img);
   cv::Mat map_img = cv::Mat::zeros(height_, width_, CV_8UC3);
   for (int x = 0; x < map_img.cols; x++) {
@@ -1505,6 +1526,31 @@ cv::Mat Calibration::getProjectionImg(const Vector6d &extrinsic_params) {
   // cv::imshow("map jet", map_img);
   // cv::waitKey();
   cv::Mat merge_img = 0.5 * map_img + 0.8 * rgb_image_;
+  return merge_img;
+}
+
+cv::Mat Calibration::getProjectionImg(const Vector6d &extrinsic_params,
+                                      const pcl::PointCloud<pcl::PointXYZI>::Ptr &lidar_cloud,
+                                      const cv::Mat& rgb_image) {
+  cv::Mat depth_projection_img;
+  projection(extrinsic_params, lidar_cloud, ProjectionType::DEPTH, 1,
+             depth_projection_img);
+  cv::Mat map_img = cv::Mat::zeros(height_, width_, CV_8UC3);
+  for (int x = 0; x < map_img.cols; x++) {
+    for (int y = 0; y < map_img.rows; y++) {
+      uint8_t r, g, b;
+      float norm = depth_projection_img.at<uchar>(y, x) / 256.0;
+      if (norm < min_depth_ / max_depth_) continue;
+      mapJet(norm, 0, 1, r, g, b);
+//      std::cout << float(r) / 255.0 << ", " << float(g) / 255.0 << ", " << float(b) / 255.0 << std::endl;
+      map_img.at<cv::Vec3b>(y, x)[0] = b;
+      map_img.at<cv::Vec3b>(y, x)[1] = g;
+      map_img.at<cv::Vec3b>(y, x)[2] = r;
+    }
+  }
+  // cv::imshow("map jet", map_img);
+  // cv::waitKey(1);
+  cv::Mat merge_img = 0.5 * map_img + 0.8 * rgb_image;
   return merge_img;
 }
 
