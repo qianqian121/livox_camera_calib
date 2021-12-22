@@ -192,12 +192,14 @@ Calibration::Calibration(const std::string &camera_file,
 
   loadImgAndPointcloud(bag_path, raw_lidar_cloud_, rgb_image_);
 
-  Eigen::Vector3d lwh(50, 50, 30);
-  Eigen::Vector3d origin(0, -25, -10);
+//  Eigen::Vector3d lwh(50, 50, 30);
+//  Eigen::Vector3d origin(0, -25, -10);
   std::vector<VoxelGrid> voxel_list;
   std::unordered_map<VOXEL_LOC, Voxel *> voxel_map;
 
   initVoxel(raw_lidar_cloud_, voxel_size_, voxel_map);
+  plane_line_cloud_ =
+      pcl::PointCloud<pcl::PointXYZI>::Ptr(new pcl::PointCloud<pcl::PointXYZI>);
   LiDAREdgeExtraction(voxel_map, ransac_dis_threshold_, plane_size_threshold_,
                       plane_line_cloud_);
 
@@ -216,7 +218,7 @@ Calibration::Calibration(const std::string &camera_file,
   }
   edgeDetector(rgb_canny_threshold_, rgb_edge_minLen_, cut_grey_image_,
                rgb_edge_img, rgb_egde_cloud_);
-};
+}
 
 Calibration::Calibration(const std::string &camera_file,
                          const std::string &calib_file) {
@@ -768,11 +770,10 @@ void Calibration::initVoxel(
 void Calibration::LiDAREdgeExtraction(
     const std::unordered_map<VOXEL_LOC, Voxel *> &voxel_map,
     const float ransac_dis_thre, const int plane_size_threshold,
-    pcl::PointCloud<pcl::PointXYZI>::Ptr &lidar_line_cloud_3d) {
+    pcl::PointCloud<pcl::PointXYZI>::Ptr &) {
   ROS_INFO_STREAM("Extracting Lidar Edge");
   ros::Rate loop(5000);
-  lidar_line_cloud_3d =
-      pcl::PointCloud<pcl::PointXYZI>::Ptr(new pcl::PointCloud<pcl::PointXYZI>);
+
   for (auto iter = voxel_map.begin(); iter != voxel_map.end(); iter++) {
     if (iter->second->cloud->size() > 50) {
       std::vector<Plane> plane_list;
