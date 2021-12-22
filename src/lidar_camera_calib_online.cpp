@@ -192,15 +192,16 @@ void ImageCallback(const sensor_msgs::ImageConstPtr &img_msg,
     ROS_ERROR("cv_bridge exception: %s", e.what());
     return;
   }
-  cv::Mat image = cv_img_ptr->image;
+  auto &image = calibra.rgb_image_;
+  cv_img_ptr->image.copyTo(image);
 //  cv::Mat imageCopy;
 //  image.copyTo(imageCopy);
 //  cv::namedWindow("out", cv::WINDOW_NORMAL);
 //  cv::imshow("out", imageCopy);
 //  cv::waitKey(1);
 
-  pcl::PointCloud<pcl::PointXYZI>::Ptr origin_cloud =
-      pcl::PointCloud<pcl::PointXYZI>::Ptr(new pcl::PointCloud<pcl::PointXYZI>);
+  auto& origin_cloud = calibra.raw_lidar_cloud_;
+  origin_cloud->clear();
   pcl::PointCloud<RslidarPoint> cloud;
   fromROSMsg(*cloud_msg, cloud);
   for (uint i = 0; i < cloud.size(); ++i) {
@@ -211,6 +212,13 @@ void ImageCallback(const sensor_msgs::ImageConstPtr &img_msg,
     p.intensity = static_cast<float>(cloud.points[i].intensity);
     origin_cloud->points.push_back(p);
   }
+
+  calibra.extractImgAndPointcloudEdges();
+  std::vector<VPnPData> pnp_list;
+  int match_dis = 25;
+  calibra.buildVPnp(calibra.calib_params(), match_dis, true,
+                    calibra.rgb_egde_cloud_, calibra.plane_line_cloud_,
+                    pnp_list);
 
   sensor_msgs::PointCloud2 pub_cloud;
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr rgb_cloud(

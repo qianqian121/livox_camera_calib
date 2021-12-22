@@ -83,6 +83,7 @@ public:
   void rtToMatrix(Eigen::Vector3d &r, Eigen::Vector3d &t, Eigen::Matrix4d& m);
   bool loadCalibConfig(const std::string &config_file);
   bool loadConfig(const std::string &configFile);
+  void extractImgAndPointcloudEdges();
   bool checkFov(const cv::Point2d &p);
   void colorCloud(const Vector6d &extrinsic_params, const int density,
                   const cv::Mat &rgb_img,
@@ -126,7 +127,8 @@ public:
   void LiDAREdgeExtraction(
       const std::unordered_map<VOXEL_LOC, Voxel *> &voxel_map,
       const float ransac_dis_thre, const int plane_size_threshold,
-      pcl::PointCloud<pcl::PointXYZI>::Ptr &lidar_line_cloud_3d);
+      pcl::PointCloud<pcl::PointXYZI>::Ptr &lidar_line_cloud_3d,
+      bool is_callback = false);
   void calcDirection(const std::vector<Eigen::Vector2d> &points,
                      Eigen::Vector2d &direction);
   void calcResidual(const Vector6d &extrinsic_params,
@@ -224,6 +226,10 @@ Calibration::Calibration(const std::string &camera_file,
                          const std::string &calib_file) {
   loadCameraConfig(camera_file);
   loadCalibConfig(calib_file);
+  plane_line_cloud_ =
+      pcl::PointCloud<pcl::PointXYZI>::Ptr(new pcl::PointCloud<pcl::PointXYZI>);
+  raw_lidar_cloud_ =
+      pcl::PointCloud<pcl::PointXYZI>::Ptr(new pcl::PointCloud<pcl::PointXYZI>);
 }
 
 bool Calibration::loadCameraConfig(const std::string &camera_file) {
@@ -706,6 +712,24 @@ cv::Mat Calibration::getConnectImg(
   return connect_img;
 }
 
+void Calibration::extractImgAndPointcloudEdges() {
+  std::vector<VoxelGrid> voxel_list;
+  std::unordered_map<VOXEL_LOC, Voxel *> voxel_map;
+
+  initVoxel(raw_lidar_cloud_, voxel_size_, voxel_map);
+  plane_line_cloud_->clear();
+  LiDAREdgeExtraction(voxel_map, ransac_dis_threshold_, plane_size_threshold_,
+                      plane_line_cloud_);
+
+  cv::cvtColor(rgb_image_, cut_grey_image_, cv::COLOR_BGR2GRAY);
+  cv::Mat rgb_edge_img;
+  if (is_enhance_rgb_) {
+    cv::equalizeHist(cut_grey_image_, cut_grey_image_);
+  }
+  edgeDetector(rgb_canny_threshold_, rgb_edge_minLen_, cut_grey_image_,
+               rgb_edge_img, rgb_egde_cloud_);
+}
+
 bool Calibration::checkFov(const cv::Point2d &p) {
   if (p.x > 0 && p.x < width_ && p.y > 0 && p.y < height_) {
     return true;
@@ -770,9 +794,9 @@ void Calibration::initVoxel(
 void Calibration::LiDAREdgeExtraction(
     const std::unordered_map<VOXEL_LOC, Voxel *> &voxel_map,
     const float ransac_dis_thre, const int plane_size_threshold,
-    pcl::PointCloud<pcl::PointXYZI>::Ptr &) {
+    pcl::PointCloud<pcl::PointXYZI>::Ptr &, bool is_callback) {
   ROS_INFO_STREAM("Extracting Lidar Edge");
-  ros::Rate loop(5000);
+  ros::Rate loop(is_callback ? 10 : 5000);
 
   for (auto iter = voxel_map.begin(); iter != voxel_map.end(); iter++) {
     if (iter->second->cloud->size() > 50) {
@@ -861,7 +885,7 @@ void Calibration::LiDAREdgeExtraction(
         pcl::toROSMsg(color_planner_cloud, planner_cloud2);
         planner_cloud2.header.frame_id = "livox";
         planner_cloud_pub_.publish(planner_cloud2);
-        loop.sleep();
+        if (!is_callback) loop.sleep();
       }
 
       std::vector<pcl::PointCloud<pcl::PointXYZI>> line_cloud_list;
@@ -879,7 +903,7 @@ void Calibration::LiDAREdgeExtraction(
             pcl::toROSMsg(line_cloud_list[cloud_index], pub_cloud);
             pub_cloud.header.frame_id = "livox";
             line_cloud_pub_.publish(pub_cloud);
-            loop.sleep();
+            if (!is_callback) loop.sleep();
             plane_line_number_.push_back(line_number_);
           }
           line_number_++;
