@@ -54,9 +54,13 @@ LidarToCameraExtrinsicMat: !!opencv-matrix
 #          -9.9908478656297162e-01, 1.0100000000000000e+00,
 #          9.9205124036137071e-01, 1.1866296667810426e-01,
 #          -4.1874059232621788e-02, 7.2999999999999998e-01, 0., 0., 0., 1. ]
-  data: [0.00333536,-0.999676,-0.025224,0.00593853,
-         0.0123896,0.0252635,-0.999604,0.135209,
-         0.999918,0.00302153,0.0124699,-0.0392199,
+#  data: [0.00333536,-0.999676,-0.025224,0.00593853,
+#         0.0123896,0.0252635,-0.999604,0.135209,
+#         0.999918,0.00302153,0.0124699,-0.0392199,
+#         0,0,0,1]
+  data: [0.00393905,-0.999663,-0.025671,0.0104296,
+         0.0127264,0.0257192,-0.999588,0.251899,
+         0.999911,0.00361073,0.0128234,-0.0724171,
          0,0,0,1]
 # Params for Canny Edge Extraction
 
@@ -64,15 +68,15 @@ Canny.gray_threshold: 10
 Canny.len_threshold: 200
 
 # Params for Voxel Cutting & Plane Fitting & Edge Extraction
-Voxel.size: 1.0
+Voxel.size: 0.5
 Voxel.down_sample_size: 0.02
 Plane.min_points_size: 15
 Plane.normal_theta_min: 30
 Plane.normal_theta_max: 145
 Plane.max_size: 5
 Ransac.dis_threshold: 0.02
-Edge.min_dis_threshold: 0.03
-Edge.max_dis_threshold: 0.06
+Edge.min_dis_threshold: 0.1
+Edge.max_dis_threshold: 0.2
 AdjustEuler1: -2
 AdjustEuler2: -0.5
 AdjustEuler3: 2
