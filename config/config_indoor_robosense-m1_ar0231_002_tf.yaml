@@ -16,8 +16,13 @@ RotatedCameraToLidarExtrinsicTf: !!opencv-matrix
   rows: 6
   cols: 1
   dt: d
-  data: [0.0200827, 0.0237906, 0.117737, -0.018544, -0.0222625, 0.0217908]
-# from velo2cam calibration
+  data: [0.0143704, 0.0475798, 0.12645, -0.0130448, -0.00425256, 0.0327]
+
+#  Extrinsic parameters:
+#  x = 0.0144	y = 0.0476	z = 0.1265
+#  roll = 0.0327	pitch = -0.0043	yaw = -0.0130
+#  args="0.0143704 0.0475798 0.12645 -0.0130448 -0.00425256 0.0327 /rslidar rotated_usb_cam 100"
+# from velo2cam calibration 3d print tmp mount
 # 0.0200827 0.0237906 0.117737 -0.018544 -0.0222625 0.0217908
 # x = 0.0201 y = 0.0238 z = 0.1177
 # roll = 0.0218 pitch = -0.0223 yaw = -0.0185
@@ -54,12 +59,12 @@ Canny.gray_threshold: 10
 Canny.len_threshold: 200
 
 # Params for Voxel Cutting & Plane Fitting & Edge Extraction
-Voxel.size: 0.5
+Voxel.size: 1.0
 Voxel.down_sample_size: 0.02
 Plane.min_points_size: 15
 Plane.normal_theta_min: 30
 Plane.normal_theta_max: 145
-Plane.max_size: 8
+Plane.max_size: 5
 Ransac.dis_threshold: 0.02
 Edge.min_dis_threshold: 0.03
 Edge.max_dis_threshold: 0.06

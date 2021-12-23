@@ -63,7 +63,7 @@ public:
   int rgb_canny_threshold_ = 20;
   int intensity_canny_threshold_ = 20;
   float min_depth_ = 2.5;
-  float max_depth_ = 10.0;
+  float max_depth_ = 100.0;
   float min_cost_ = 1000;
   int plane_max_size_ = 8;
   float detect_line_threshold_ = 0.02;
