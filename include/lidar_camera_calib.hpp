@@ -32,6 +32,8 @@
 #include <time.h>
 #include <unordered_map>
 
+#include "pp_buf.h"
+
 #define calib
 #define online
 class Calibration {
@@ -73,6 +75,8 @@ public:
   ProjectionType projection_type_ = DEPTH;
   Eigen::Vector3d optimize_euler_angle_;
   Eigen::Vector3d adjust_euler_angle_;
+  using CloudBuf = PpBuf<pcl::PointCloud<pcl::PointXYZI>>;
+  std::shared_ptr<CloudBuf> plane_cloud_;
   Calibration(const std::string &camera_file, const std::string &calib_file,
               const std::string &bag_path);
   Calibration(const std::string &camera_file, const std::string &calib_file);
@@ -223,7 +227,7 @@ Calibration::Calibration(const std::string &camera_file,
 }
 
 Calibration::Calibration(const std::string &camera_file,
-                         const std::string &calib_file) {
+                         const std::string &calib_file) : plane_cloud_(make_shared<CloudBuf>()) {
   loadCameraConfig(camera_file);
   loadCalibConfig(calib_file);
   plane_line_cloud_ =
@@ -719,7 +723,7 @@ void Calibration::extractImgAndPointcloudEdges() {
   initVoxel(raw_lidar_cloud_, voxel_size_, voxel_map);
   plane_line_cloud_->clear();
   LiDAREdgeExtraction(voxel_map, ransac_dis_threshold_, plane_size_threshold_,
-                      plane_line_cloud_);
+                      plane_line_cloud_, true);
 
   cv::cvtColor(rgb_image_, cut_grey_image_, cv::COLOR_BGR2GRAY);
   cv::Mat rgb_edge_img;
@@ -796,7 +800,7 @@ void Calibration::LiDAREdgeExtraction(
     const float ransac_dis_thre, const int plane_size_threshold,
     pcl::PointCloud<pcl::PointXYZI>::Ptr &, bool is_callback) {
   ROS_INFO_STREAM("Extracting Lidar Edge");
-  ros::Rate loop(is_callback ? 10 : 5000);
+  ros::Rate loop(5000);
 
   for (auto iter = voxel_map.begin(); iter != voxel_map.end(); iter++) {
     if (iter->second->cloud->size() > 50) {
@@ -899,17 +903,24 @@ void Calibration::LiDAREdgeExtraction(
           for (size_t i = 0; i < line_cloud_list[cloud_index].size(); i++) {
             pcl::PointXYZI p = line_cloud_list[cloud_index].points[i];
             plane_line_cloud_->points.push_back(p);
-            sensor_msgs::PointCloud2 pub_cloud;
-            pcl::toROSMsg(line_cloud_list[cloud_index], pub_cloud);
-            pub_cloud.header.frame_id = "livox";
-            line_cloud_pub_.publish(pub_cloud);
-            if (!is_callback) loop.sleep();
+            if (!is_callback) {
+              sensor_msgs::PointCloud2 pub_cloud;
+              pcl::toROSMsg(line_cloud_list[cloud_index], pub_cloud);
+              pub_cloud.header.frame_id = "livox";
+              line_cloud_pub_.publish(pub_cloud);
+              loop.sleep();
+            }
             plane_line_number_.push_back(line_number_);
           }
           line_number_++;
         }
       }
     }
+  }
+  if (is_callback) {
+//    cout << "plane_line_cloud_->size()" << plane_line_cloud_->size() << std::endl;
+    plane_cloud_->Update(*plane_line_cloud_);
+//    std::cout << "plane_cloud_->Get().size()" << plane_cloud_->Get().size() << std::endl;
   }
 }
 

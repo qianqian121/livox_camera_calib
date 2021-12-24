@@ -239,7 +239,7 @@ void ImageCallback(const sensor_msgs::ImageConstPtr &img_msg,
 int main(int argc, char **argv) {
   ros::init(argc, argv, "lidarCamCalibOnline");
   ros::NodeHandle nh;
-  ros::Rate loop_rate(0.1);
+  ros::Rate loop_rate(4);
 
   ros::NodeHandle nh_("~");  // LOCAL
   string image_topic, cloud_topic;
@@ -265,7 +265,18 @@ int main(int argc, char **argv) {
 //  message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::PointCloud2>
 //      sync(image_sub, cloud_sub, 10); // queue size 10
 //  sync.registerCallback(boost::bind(&ImageCallback, _1, _2));
-  ros::spin();
+
+  while (ros::ok()) {
+    auto& plane_cloud = calibra.plane_cloud_->Get();
+//    std::cout << plane_cloud.size() << std::endl;
+    sensor_msgs::PointCloud2 pub_plane_cloud;
+    pcl::toROSMsg(plane_cloud, pub_plane_cloud);
+    pub_plane_cloud.header.frame_id = "livox";
+    calibra.line_cloud_pub_.publish(pub_plane_cloud);
+    ros::spinOnce();
+    loop_rate.sleep();
+  }
+
   cv::destroyAllWindows();
   return 0;
 
