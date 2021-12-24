@@ -21,6 +21,10 @@ public:
   T& Get() {
     return cloud_[idx_ % 2];
   }
+  T& GetWriter() {
+    Update();
+    return Get();
+  }
   void Update(const T& other) {
     Update();
     Get() = other;

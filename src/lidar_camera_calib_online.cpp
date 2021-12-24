@@ -267,12 +267,19 @@ int main(int argc, char **argv) {
 //  sync.registerCallback(boost::bind(&ImageCallback, _1, _2));
 
   while (ros::ok()) {
-    auto& plane_cloud = calibra.plane_cloud_->Get();
+    auto& plane_line_cloud = calibra.pub_line_cloud_->Get();
 //    std::cout << plane_cloud.size() << std::endl;
+    sensor_msgs::PointCloud2 pub_plane_line_cloud;
+    pcl::toROSMsg(plane_line_cloud, pub_plane_line_cloud);
+    pub_plane_line_cloud.header.frame_id = "livox";
+    calibra.line_cloud_pub_.publish(pub_plane_line_cloud);
+
+    auto& plane_cloud = calibra.pub_plane_cloud_->Get();
     sensor_msgs::PointCloud2 pub_plane_cloud;
     pcl::toROSMsg(plane_cloud, pub_plane_cloud);
     pub_plane_cloud.header.frame_id = "livox";
-    calibra.line_cloud_pub_.publish(pub_plane_cloud);
+    calibra.planner_cloud_pub_.publish(pub_plane_cloud);
+
     ros::spinOnce();
     loop_rate.sleep();
   }

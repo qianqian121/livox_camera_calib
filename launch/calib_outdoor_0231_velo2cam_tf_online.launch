@@ -13,6 +13,6 @@
     pkg="rviz"
     type="rviz"
     name="rviz"
-    args="-d $(find livox_camera_calib)/rviz_cfg/calib_indoor.rviz"
+    args="-d $(find livox_camera_calib)/rviz_cfg/calib_online.rviz"
   />
 </launch>

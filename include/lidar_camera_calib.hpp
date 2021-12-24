@@ -76,7 +76,9 @@ public:
   Eigen::Vector3d optimize_euler_angle_;
   Eigen::Vector3d adjust_euler_angle_;
   using CloudBuf = PpBuf<pcl::PointCloud<pcl::PointXYZI>>;
-  std::shared_ptr<CloudBuf> plane_cloud_;
+  using ColorCloudBuf = PpBuf<pcl::PointCloud<pcl::PointXYZRGB>>;
+  std::shared_ptr<CloudBuf> pub_line_cloud_;
+  std::shared_ptr<ColorCloudBuf> pub_plane_cloud_;
   Calibration(const std::string &camera_file, const std::string &calib_file,
               const std::string &bag_path);
   Calibration(const std::string &camera_file, const std::string &calib_file);
@@ -227,7 +229,9 @@ Calibration::Calibration(const std::string &camera_file,
 }
 
 Calibration::Calibration(const std::string &camera_file,
-                         const std::string &calib_file) : plane_cloud_(make_shared<CloudBuf>()) {
+                         const std::string &calib_file) :
+    pub_line_cloud_(make_shared<CloudBuf>()),
+    pub_plane_cloud_(make_shared<ColorCloudBuf>()) {
   loadCameraConfig(camera_file);
   loadCalibConfig(calib_file);
   plane_line_cloud_ =
@@ -802,6 +806,10 @@ void Calibration::LiDAREdgeExtraction(
   ROS_INFO_STREAM("Extracting Lidar Edge");
   ros::Rate loop(5000);
 
+  pub_plane_cloud_->Update();
+  auto &pub_plane_cloud = pub_plane_cloud_->GetWriter();
+  pub_plane_cloud.clear();
+
   for (auto iter = voxel_map.begin(); iter != voxel_map.end(); iter++) {
     if (iter->second->cloud->size() > 50) {
       std::vector<Plane> plane_list;
@@ -885,11 +893,15 @@ void Calibration::LiDAREdgeExtraction(
         *cloud_filter = cloud_f;
       }
       if (plane_list.size() >= 2) {
-        sensor_msgs::PointCloud2 planner_cloud2;
-        pcl::toROSMsg(color_planner_cloud, planner_cloud2);
-        planner_cloud2.header.frame_id = "livox";
-        planner_cloud_pub_.publish(planner_cloud2);
-        if (!is_callback) loop.sleep();
+        if (!is_callback) {
+          sensor_msgs::PointCloud2 planner_cloud2;
+          pcl::toROSMsg(color_planner_cloud, planner_cloud2);
+          planner_cloud2.header.frame_id = "livox";
+          planner_cloud_pub_.publish(planner_cloud2);
+          loop.sleep();
+        } else {
+          pub_plane_cloud += color_planner_cloud;
+        }
       }
 
       std::vector<pcl::PointCloud<pcl::PointXYZI>> line_cloud_list;
@@ -919,8 +931,8 @@ void Calibration::LiDAREdgeExtraction(
   }
   if (is_callback) {
 //    cout << "plane_line_cloud_->size()" << plane_line_cloud_->size() << std::endl;
-    plane_cloud_->Update(*plane_line_cloud_);
-//    std::cout << "plane_cloud_->Get().size()" << plane_cloud_->Get().size() << std::endl;
+    pub_line_cloud_->Update(*plane_line_cloud_);
+//    std::cout << "pub_line_cloud_->Get().size()" << pub_line_cloud_->Get().size() << std::endl;
   }
 }
 
