@@ -169,7 +169,7 @@ Visualization Manager:
   Global Options:
     Background Color: 0; 0; 0
     Default Light: true
-    Fixed Frame: livox
+    Fixed Frame: rslidar
     Frame Rate: 30
   Name: root
   Tools:

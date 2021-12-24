@@ -242,11 +242,13 @@ int main(int argc, char **argv) {
   ros::Rate loop_rate(4);
 
   ros::NodeHandle nh_("~");  // LOCAL
-  string image_topic, cloud_topic;
+  string image_topic, cloud_topic, frame_id;
   nh_.param<string>("image_topic", image_topic,
                     "/usb_cam/image_raw");
   nh_.param<string>("cloud_topic", cloud_topic,
                     "/rslidar_points");
+  nh_.param<string>("frame_id", frame_id,
+                    "rslidar");
 
   const std::string CameraConfigPath = std::string(argv[1]);
   const std::string CalibSettingPath = std::string(argv[2]);
@@ -271,13 +273,13 @@ int main(int argc, char **argv) {
 //    std::cout << plane_cloud.size() << std::endl;
     sensor_msgs::PointCloud2 pub_plane_line_cloud;
     pcl::toROSMsg(plane_line_cloud, pub_plane_line_cloud);
-    pub_plane_line_cloud.header.frame_id = "livox";
+    pub_plane_line_cloud.header.frame_id = frame_id;
     calibra.line_cloud_pub_.publish(pub_plane_line_cloud);
 
     auto& plane_cloud = calibra.pub_plane_cloud_->Get();
     sensor_msgs::PointCloud2 pub_plane_cloud;
     pcl::toROSMsg(plane_cloud, pub_plane_cloud);
-    pub_plane_cloud.header.frame_id = "livox";
+    pub_plane_cloud.header.frame_id = frame_id;
     calibra.planner_cloud_pub_.publish(pub_plane_cloud);
 
     ros::spinOnce();
