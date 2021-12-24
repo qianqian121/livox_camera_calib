@@ -1,6 +1,7 @@
 #include "include/lidar_camera_calib.hpp"
 #include "ceres/ceres.h"
 #include "include/common.h"
+#include <atomic>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -10,6 +11,7 @@
 //#include <message_filters/time_synchronizer.h>
 #include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
+#include <dynamic_reconfigure/server.h>
 
 //#define add_error
 // instrins matrix
@@ -18,6 +20,8 @@ Eigen::Matrix3d inner;
 Eigen::Vector4d distor;
 Eigen::Vector4d quaternion;
 Eigen::Vector3d transation;
+livox_camera_calib::CalibConfig calib_config;
+std::atomic_bool has_new_config{false};
 
 // Normal pnp solution
 class pnp_calib {
@@ -213,6 +217,10 @@ void ImageCallback(const sensor_msgs::ImageConstPtr &img_msg,
     origin_cloud->points.push_back(p);
   }
 
+  if (has_new_config) {
+    calibra.UpdateCalibConfig(calib_config);
+    has_new_config = false;
+  }
   calibra.extractImgAndPointcloudEdges();
   std::vector<VPnPData> pnp_list;
   int match_dis = 25;
@@ -234,6 +242,15 @@ void ImageCallback(const sensor_msgs::ImageConstPtr &img_msg,
   cv::namedWindow("Initial extrinsic", cv::WINDOW_NORMAL);
   cv::imshow("Initial extrinsic", init_img);
   cv::waitKey(1);
+}
+
+void param_callback(livox_camera_calib::CalibConfig &config,
+                    uint32_t level) {
+  calib_config = config;
+  has_new_config = true;
+  ROS_INFO("New voxel_size: %f", config.voxel_size);
+  ROS_INFO("New down_sample_size: %f", config.down_sample_size);
+  ROS_INFO("New min_points_size: %f", config.plane_min_points_size);
 }
 
 int main(int argc, char **argv) {
@@ -267,6 +284,13 @@ int main(int argc, char **argv) {
 //  message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::PointCloud2>
 //      sync(image_sub, cloud_sub, 10); // queue size 10
 //  sync.registerCallback(boost::bind(&ImageCallback, _1, _2));
+
+  // ROS param callback
+  dynamic_reconfigure::Server<livox_camera_calib::CalibConfig> server;
+  dynamic_reconfigure::Server<
+      livox_camera_calib::CalibConfig>::CallbackType f;
+  f = boost::bind(param_callback, _1, _2);
+  server.setCallback(f);
 
   while (ros::ok()) {
     auto& plane_line_cloud = calibra.pub_line_cloud_->Get();

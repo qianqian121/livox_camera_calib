@@ -32,6 +32,7 @@
 #include <time.h>
 #include <unordered_map>
 
+#include <livox_camera_calib/CalibConfig.h>
 #include "pp_buf.h"
 
 #define calib
@@ -89,6 +90,7 @@ public:
   void rtToMatrix(Eigen::Vector3d &r, Eigen::Vector3d &t, Eigen::Matrix4d& m);
   bool loadCalibConfig(const std::string &config_file);
   bool loadConfig(const std::string &configFile);
+  void UpdateCalibConfig(livox_camera_calib::CalibConfig &config);
   void extractImgAndPointcloudEdges();
   bool checkFov(const cv::Point2d &p);
   void colorCloud(const Vector6d &extrinsic_params, const int density,
@@ -384,6 +386,23 @@ bool Calibration::loadCalibConfig(const std::string &config_file) {
   adjust_euler_angle_[2] = DEG2RAD(adjust_euler_angle_[2]);
   return true;
 };
+
+void Calibration::UpdateCalibConfig(livox_camera_calib::CalibConfig &config) {
+  voxel_size_ = config.voxel_size;
+  down_sample_size_ = config.down_sample_size;
+  plane_size_threshold_ = config.plane_min_points_size;
+  plane_max_size_ = config.plane_max_size;
+  ransac_dis_threshold_ = config.ransac_dis_threshold;
+  min_line_dis_threshold_ = config.line_min_dis_threshold;
+  max_line_dis_threshold_ = config.line_max_dis_threshold;
+  theta_min_ = config.normal_theta_min;
+  theta_max_ = config.normal_theta_max;
+
+  theta_min_ = cos(DEG2RAD(theta_min_));
+  theta_max_ = cos(DEG2RAD(theta_max_));
+  direction_theta_min_ = cos(DEG2RAD(30.0));
+  direction_theta_max_ = cos(DEG2RAD(150.0));
+}
 
 // Color the point cloud by rgb image using given extrinsic
 void Calibration::colorCloud(
@@ -1142,6 +1161,7 @@ void Calibration::buildVPnp(
     const pcl::PointCloud<pcl::PointXYZ>::Ptr &cam_edge_cloud_2d,
     const pcl::PointCloud<pcl::PointXYZI>::Ptr &lidar_line_cloud_3d,
     std::vector<VPnPData> &pnp_list) {
+  if (cam_edge_cloud_2d->empty() || lidar_line_cloud_3d->empty()) return;
   pnp_list.clear();
   std::vector<std::vector<std::vector<pcl::PointXYZI>>> img_pts_container;
   for (int y = 0; y < height_; y++) {

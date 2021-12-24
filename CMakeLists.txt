@@ -17,6 +17,11 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   sensor_msgs
   std_msgs
+  dynamic_reconfigure
+)
+
+generate_dynamic_reconfigure_options(
+        cfg/Calib.cfg
 )
 
 ## System dependencies are found with CMake's conventions
@@ -32,11 +37,11 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 catkin_package(
- CATKIN_DEPENDS roscpp rospy std_msgs
+ CATKIN_DEPENDS roscpp rospy std_msgs dynamic_reconfigure
 )
 
 include_directories(
-# include
+  include
   ${catkin_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
