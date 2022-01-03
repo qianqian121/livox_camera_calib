@@ -856,15 +856,13 @@ void Calibration::LiDAREdgeExtraction(
       }
       pcl::PointCloud<pcl::PointXYZRGB> color_planner_cloud;
       int plane_index = 0;
-      while (cloud_filter->points.size() > (3*plane_size_threshold) / 2) {
+      while (cloud_filter->points.size() > 10) {
         pcl::PointCloud<pcl::PointXYZI> planner_cloud;
         pcl::ExtractIndices<pcl::PointXYZI> extract;
         //输入点云
         seg.setInputCloud(cloud_filter);
         seg.setMaxIterations(500);
         //分割点云
-        inliers->indices.clear();
-        coefficients->values.clear();
         seg.segment(*inliers, *coefficients);
         if (inliers->indices.size() == 0) {
           ROS_INFO_STREAM(
