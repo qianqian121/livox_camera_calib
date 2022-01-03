@@ -196,7 +196,9 @@ public:
 
 Calibration::Calibration(const std::string &camera_file,
                          const std::string &calib_file,
-                         const std::string &bag_path) {
+                         const std::string &bag_path) :
+    pub_line_cloud_(make_shared<CloudBuf>()),
+    pub_plane_cloud_(make_shared<ColorCloudBuf>()) {
   loadCameraConfig(camera_file);
   loadCalibConfig(calib_file);
 
@@ -825,7 +827,6 @@ void Calibration::LiDAREdgeExtraction(
   ROS_INFO_STREAM("Extracting Lidar Edge");
   ros::Rate loop(5000);
 
-  pub_plane_cloud_->Update();
   auto &pub_plane_cloud = pub_plane_cloud_->GetWriter();
   pub_plane_cloud.clear();
 
