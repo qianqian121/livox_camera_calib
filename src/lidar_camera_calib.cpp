@@ -362,6 +362,7 @@ int main(int argc, char **argv) {
   outfile << RAD2DEG(adjust_euler[0]) << "," << RAD2DEG(adjust_euler[1]) << ","
           << RAD2DEG(adjust_euler[2]) << "," << 0 << "," << 0 << "," << 0
           << std::endl;
+  int print_cnt = 0;
   while (ros::ok()) {
     sensor_msgs::PointCloud2 pub_cloud;
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr rgb_cloud(
@@ -375,8 +376,11 @@ int main(int argc, char **argv) {
         cv_bridge::CvImage(std_msgs::Header(), "bgr8", calibra.rgb_image_)
             .toImageMsg();
     calibra.image_pub_.publish(img_msg);
-    std::cout << "push enter to publish again" << std::endl;
-    getchar();
+    if (print_cnt++ % 100 == 0) {
+      std::cout << "publishing rbg cloud and projected image..." << std::endl;
+    }
+//    std::cout << "push enter to publish again" << std::endl;
+//    getchar();
     /* code */
   }
   return 0;
