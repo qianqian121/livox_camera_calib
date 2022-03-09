@@ -1,0 +1,86 @@
+%YAML:1.0
+
+# Topic name in rosbag
+PointCloudTopic: "/rslidar_points"
+ImageTopic: "/usb_cam/image_raw"
+
+# Lidar Data type(custom msg or pointcloud2)
+Data.custom_msg: 0
+Data.rslidar_point: 1
+
+# Initial extrinsic (usually provided by hand measurement or cad design)
+# Which Data type used for calculating internal extrinsic matrix - Camera to Lidar transform
+#ExtrinsicDataType: "RotatedCameraToLidarExtrinsicTf"
+ExtrinsicDataType: "LidarToCameraExtrinsicMat"
+
+RotatedCameraToLidarExtrinsicTf: !!opencv-matrix
+  rows: 6
+  cols: 1
+  dt: d
+  data: [0.0143704, 0.0475798, 0.12645, -0.0130448, -0.00425256, 0.0327]
+
+#calib4_bag1 result
+#  0.00333536,-0.999676,-0.025224,0.00593853
+#  0.0123896,0.0252635,-0.999604,0.135209
+#  0.999918,0.00302153,0.0124699,-0.0392199
+#  0,0,0,1
+#  179.809,179.29,178.552,0,0,0
+#  Extrinsic parameters:
+#  x = 0.0144	y = 0.0476	z = 0.1265
+#  roll = 0.0327	pitch = -0.0043	yaw = -0.0130
+#  args="0.0143704 0.0475798 0.12645 -0.0130448 -0.00425256 0.0327 /rslidar rotated_usb_cam 100"
+# from velo2cam calibration 3d print tmp mount
+# 0.0200827 0.0237906 0.117737 -0.018544 -0.0222625 0.0217908
+# x = 0.0201 y = 0.0238 z = 0.1177
+# roll = 0.0218 pitch = -0.0223 yaw = -0.0185
+
+LidarToCameraExtrinsicMat: !!opencv-matrix
+  rows: 4
+  cols: 4
+  dt: d
+#  data: [0.0,   -1.0,   0.0,    0.0,
+#         0.0,  0.0,  -1.0,    0.0,
+#         1.0,   0.0,    0.0,    0.0,
+#         0.0,   0.0,    0.0,    1.0]
+#  data: [ 9.4084090716008414e-02, -9.9530571623471509e-01,
+#          -2.2687333572781358e-02, 4.0000000000000013e-01,
+#          -7.8507320490037669e-02, 1.5300179603618553e-02,
+#          -9.9679612014371910e-01, 1.0599999999999994e+00,
+#          9.9246399657802020e-01, 9.5563778360829618e-02,
+#          -7.6699281364207200e-02, 6.9999999999999996e-01, 0., 0., 0., 1. ]
+#  data: [ 1.1839945984619259e-01, -9.9292769902260536e-01,
+#          -8.7265354983739069e-03, 4.1000000000000014e-01,
+#          -4.2613429873642271e-02, 3.6993043705094725e-03,
+#          -9.9908478656297162e-01, 1.0100000000000000e+00,
+#          9.9205124036137071e-01, 1.1866296667810426e-01,
+#          -4.1874059232621788e-02, 7.2999999999999998e-01, 0., 0., 0., 1. ]
+#  data: [0.00333536,-0.999676,-0.025224,0.00593853,
+#         0.0123896,0.0252635,-0.999604,0.135209,
+#         0.999918,0.00302153,0.0124699,-0.0392199,
+#         0,0,0,1]
+  data: [0.00393905,-0.999663,-0.025671,0.0104296,
+         0.0127264,0.0257192,-0.999588,0.251899,
+         0.999911,0.00361073,0.0128234,-0.0724171,
+         0,0,0,1]
+# Params for Canny Edge Extraction
+
+Canny.gray_threshold: 20
+Canny.len_threshold: 200
+
+# Params for Voxel Cutting & Plane Fitting & Edge Extraction
+Voxel.size: 1.0
+Voxel.down_sample_size: 0.02
+Plane.min_points_size: 60
+Plane.normal_theta_min: 30
+Plane.normal_theta_max: 145
+Plane.max_size: 5
+Ransac.dis_threshold: 0.015
+Edge.min_dis_threshold: 0.03
+Edge.max_dis_threshold: 0.06
+AdjustEuler1: -2
+AdjustEuler2: -0.5
+AdjustEuler3: 2
+
+# Params for color point clouds
+Color.dense: 0.1
+Color.intensity_threshold: 1

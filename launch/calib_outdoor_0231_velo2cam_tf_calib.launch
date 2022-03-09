@@ -1,0 +1,18 @@
+<launch>
+  <node 
+    pkg="livox_camera_calib"
+    type="lidar_camera_calib"
+    name="lidar_camera_calib"
+    args="$(find livox_camera_calib)/config/camera_0231_002.yaml
+        $(find livox_camera_calib)/config/config_outdoor_robosense-m1_ar0231_002_tf_calib.yaml
+        /mnt/data/ros/outdoor_20220102/s2/2022-01-02-22-41-44.bag
+        $(find livox_camera_calib)/result_002_ourdoor_20220102_bag12"
+    output="screen"
+  />
+  <node 
+    pkg="rviz"
+    type="rviz"
+    name="rviz"
+    args="-d $(find livox_camera_calib)/rviz_cfg/calib.rviz"
+  />
+</launch>

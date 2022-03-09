@@ -37,10 +37,13 @@ void ImageCallback(const sensor_msgs::ImageConstPtr &img_msg,
   range_img.GenerateVizImg();
   cv::namedWindow("range", cv::WINDOW_NORMAL);
   cv::imshow("range", range_img.viz_img);
-  cv::waitKey(100);
+  char ch = cv::waitKey(100);
+  if (ch == 's') {
+    cv::imwrite("/mnt/project/github/ELSED/images/range.png", range_img.viz_img);
+    cv::imwrite("/mnt/project/github/ELSED/images/range_gray.png", range_img.img);
+  }
   cv::namedWindow("range raw", cv::WINDOW_NORMAL);
   cv::imshow("range raw", range_img.img);
-  cv::waitKey(100);
   for (uint i = 0; i < cloud.size(); ++i) {
     pcl::PointXYZI p;
     p.x = cloud.points[i].x;
