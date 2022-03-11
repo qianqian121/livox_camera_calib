@@ -8,14 +8,19 @@ ImageTopic: "/cam_front/image_rect_color/compressed"
 Data.custom_msg: 0
 # Initial extrinsic (usually provided by hand measurement or cad design)
 
-ExtrinsicMat: !!opencv-matrix
-  rows: 4
-  cols: 4
+ExtrinsicDataType: "RotatedCameraToLidarExtrinsicTf"
+
+# front camera 13cm above front radar
+# x,y,z yaw,pitch,roll
+RotatedCameraToLidarExtrinsicTf: !!opencv-matrix
+  rows: 6
+  cols: 1
   dt: d
-  data: [0.0,   -1.0,   0.0,    0.0,
-         0.0,  0.0,  -1.0,    0.0,
-         1.0,   0.0,    0.0,    0.0,
-         0.0,   0.0,    0.0,    1.0]
+  data: [0.0, 0.0, 0.13, 0.0, 0.0, 0.0]
+
+# Params for projection image
+Proj.n_fill_img: 5
+
 # Params for Canny Edge Extraction
 
 Canny.gray_threshold: 20

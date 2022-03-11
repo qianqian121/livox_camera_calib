@@ -74,15 +74,7 @@ void ImageCallback(const sensor_msgs::CompressedImageConstPtr &img_msg,
     ROS_ERROR("Could not convert to image!");
     return;
   }
-//  cv_bridge::CvImageConstPtr cv_img_ptr;
-//  try {
-//    cv_img_ptr = cv_bridge::toCvShare(img_msg, sensor_msgs::image_encodings::BGR8);
-//  } catch (cv_bridge::Exception &e) {
-//    ROS_ERROR("cv_bridge exception: %s", e.what());
-//    return;
-//  }
-//  auto &image = calibra.rgb_image_;
-//  cv_img_ptr->image.copyTo(image);
+
   cv::Mat imageCopy;
   image.copyTo(imageCopy);
   cv::namedWindow("out", cv::WINDOW_NORMAL);
@@ -106,11 +98,11 @@ void ImageCallback(const sensor_msgs::CompressedImageConstPtr &img_msg,
     has_new_config = false;
   }
 
-////  cv::Mat init_img = calibra.getProjectionImg(calibra.calib_params(), origin_cloud, imageCopy);
-//  cv::Mat init_img = calibra.getProjectionImg(calibra.calib_params(), origin_cloud, image);
-//  cv::namedWindow("Front", cv::WINDOW_NORMAL);
-//  cv::imshow("Front", init_img);
-//  cv::waitKey(1);
+  if (origin_cloud->empty()) return;
+  cv::Mat init_img = calibra.getProjectionImg(calibra.calib_params(), origin_cloud, imageCopy);
+  cv::namedWindow("Front", cv::WINDOW_NORMAL);
+  cv::imshow("Front", init_img);
+  cv::waitKey(1);
 }
 
 void param_callback(livox_camera_calib::CalibConfig &config,

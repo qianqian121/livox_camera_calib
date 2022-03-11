@@ -1,10 +1,12 @@
 <launch>
+  <arg name="cloud_topic" default="/pc2/radar/front/pointcloud/merged/dynamic/vp104_2_vp104_3_merge"/>
   <node
     pkg="livox_camera_calib"
     type="image_radar_projection_online"
     name="image_radar_projection_online"
     args="$(find livox_camera_calib)/config/camera_image_radar_front.yaml
-        $(find livox_camera_calib)/config/config_image_radar_front.yaml
-    output="screen"
-  />
+        $(find livox_camera_calib)/config/config_image_radar_front.yaml"
+    output="screen">
+    <param name="cloud_topic" type="string" value="$(arg cloud_topic)" />
+  </node>
 </launch>

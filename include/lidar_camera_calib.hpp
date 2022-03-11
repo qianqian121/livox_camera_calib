@@ -63,6 +63,7 @@ public:
   int intensity_edge_minLen_ = 100;
   int rgb_edge_minLen_ = 100;
   int depth_canny_threshold_ = 20;
+  int n_fill_img_ = 1;
   int rgb_canny_threshold_ = 20;
   int intensity_canny_threshold_ = 20;
   float min_depth_ = 2.5;
@@ -362,6 +363,7 @@ bool Calibration::loadCalibConfig(const std::string &config_file) {
   } else {
     std::cout << "Point cloud type: PointCloud2" << std::endl;
   }
+  n_fill_img_ = fSettings["Proj.n_fill_img"];
   rgb_canny_threshold_ = fSettings["Canny.gray_threshold"];
   rgb_edge_minLen_ = fSettings["Canny.len_threshold"];
 
@@ -1605,7 +1607,7 @@ cv::Mat Calibration::getProjectionImg(const Vector6d &extrinsic_params,
                                       const pcl::PointCloud<pcl::PointXYZI>::Ptr &lidar_cloud,
                                       const cv::Mat& rgb_image) {
   cv::Mat depth_projection_img;
-  projection(extrinsic_params, lidar_cloud, ProjectionType::DEPTH, 1,
+  projection(extrinsic_params, lidar_cloud, ProjectionType::DEPTH, n_fill_img_,
              depth_projection_img);
   if (depth_projection_img.empty()) {
     return rgb_image;
