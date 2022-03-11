@@ -1,8 +1,8 @@
 %YAML:1.0
 
 # Topic name in rosbag
-PointCloudTopic: "/livox/lidar"
-ImageTopic: "/camera/color/image_raw"
+PointCloudTopic: "/pc2/radar/front/pointcloud/merged/dynamic/vp104_2_vp104_3_merge"
+ImageTopic: "/cam_front/image_rect_color/compressed"
 
 # Lidar Data type(custom msg or pointcloud2)
 Data.custom_msg: 0
