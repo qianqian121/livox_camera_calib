@@ -538,6 +538,9 @@ void Calibration::projection(
       intensity_list.emplace_back(lidar_cloud->points[i].intensity);
     }
   }
+  if (pts_3d.empty()) {
+    return;
+  }
   cv::Mat camera_matrix =
       (cv::Mat_<double>(3, 3) << fx_, s_, cx_, 0.0, fy_, cy_, 0.0, 0.0, 1.0);
   cv::Mat distortion_coeff =
@@ -1604,6 +1607,9 @@ cv::Mat Calibration::getProjectionImg(const Vector6d &extrinsic_params,
   cv::Mat depth_projection_img;
   projection(extrinsic_params, lidar_cloud, ProjectionType::DEPTH, 1,
              depth_projection_img);
+  if (depth_projection_img.empty()) {
+    return rgb_image;
+  }
   cv::Mat map_img = cv::Mat::zeros(height_, width_, CV_8UC3);
   for (int x = 0; x < map_img.cols; x++) {
     for (int y = 0; y < map_img.rows; y++) {
