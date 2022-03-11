@@ -50,6 +50,7 @@ include_directories(
 add_executable(lidar_camera_calib src/lidar_camera_calib.cpp include/lidar_camera_calib.hpp include/rslidar_point.h include/pp_buf.h include/range_image.h)
 add_executable(lidar_camera_calib_online src/lidar_camera_calib_online.cpp include/lidar_camera_calib.hpp include/rslidar_point.h)
 add_executable(lidar_camera_calib_online_pole src/lidar_camera_calib_online_pole.cpp include/lidar_camera_calib.hpp include/rslidar_point.h)
+add_executable(image_radar_projection_online src/image_radar_projection_online.cpp include/lidar_camera_calib.hpp include/rslidar_point.h)
 
 target_link_libraries(lidar_camera_calib
         ${catkin_LIBRARIES} ${OpenCV_LIBS} ${PCL_LIBRARIES} ${CERES_LIBRARIES}
@@ -58,5 +59,8 @@ target_link_libraries(lidar_camera_calib_online
         ${catkin_LIBRARIES} ${OpenCV_LIBS} ${PCL_LIBRARIES} ${CERES_LIBRARIES}
 )
 target_link_libraries(lidar_camera_calib_online_pole
+        ${catkin_LIBRARIES} ${OpenCV_LIBS} ${PCL_LIBRARIES} ${CERES_LIBRARIES}
+)
+target_link_libraries(image_radar_projection_online
         ${catkin_LIBRARIES} ${OpenCV_LIBS} ${PCL_LIBRARIES} ${CERES_LIBRARIES}
 )
